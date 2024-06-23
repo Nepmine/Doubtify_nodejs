@@ -23,30 +23,32 @@ const expsignup = asyncHandler(async (req, res) => {
     console.log(req.body);
     console.log(req.file)
 
+    const { title, description, jobtitle, links } = req.body;
+    const resume = req.file ? req.file.filename : null;
+    const proof = req.files['proof'].map(file => file.filename);
+        const library = req.files['library'].map(file => file.filename);
 
-    const { jobtitle, phone, photo, description } = req.body;
-    if (!jobtitle || !phone || !description) {
+
+    if (!title || !description || !jobtitle || !proof) {
         res.status(400);
         throw new Error("Please fill the every essentials in the form");
 
     }
     else {  
-        const photo = req.file ? req.file.filename : null;
         try{
         const store = await expertschema.create({
-            jobtitle,
-            phone,
-            photo,
-            description
+            title,
+            description,
+            jobtitle: Array.isArray(jobtitle) ? jobtitle : [jobtitle],
+            resume,
+            proof,
+            library,
+            links: Array.isArray(links) ? links : [links]
         })
         res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": req.body })
     }catch(error){res.status(500).json({ message: error.message });}
     }
-
 })
-
-
-
 
 
 

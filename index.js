@@ -14,9 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-
 app.use("/", require('./router/userRoutes'))
-
 
 
 connectDb().catch(error => console.log("Database connection error: ",error));

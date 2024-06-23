@@ -25,21 +25,31 @@ const userSchema = mongoose.Schema({
 
 
 const expertSchema = mongoose.Schema({
-    jobtitle: {
+    title: {
         type: String,
         required: [true]
-    },
-    phone: {
-        type: String,
-        required: [true]
-    },
-    photo: {
-        type:String
     },
     description: {
         type: String,
         required: [true]
-    }
+    },
+    jobtitle: { //  array
+        type: [String],
+        required: [true]
+    },
+    resume: {
+        type: String
+    },
+    proof: { //  array
+        type: [String],
+        required: [true]
+    },
+    library: { //  array
+        type: [String],
+    },
+    links: {
+        type: [String],
+    },
 }, {
     timestamps: true,
 });
@@ -47,4 +57,4 @@ const expertSchema = mongoose.Schema({
 const userschema = mongoose.model("User", userSchema);
 const expertschema = mongoose.model("Expert", expertSchema);
 
-module.exports = { userschema,expertschema };
+module.exports = { userschema, expertschema };
