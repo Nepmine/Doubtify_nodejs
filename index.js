@@ -9,12 +9,12 @@ const connectDb = require('./config/dbConnection');
 
 const app=express();
 
-
 // Middleware to parse URL-encoded bodies (for form submissions)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
+app.use("/user",require('./router/formRoutes'))
 app.use("/", require('./router/userRoutes'))
 
 

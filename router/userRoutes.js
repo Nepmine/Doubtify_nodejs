@@ -15,8 +15,8 @@ const { home, signup,expsignup, login } = require('../Controller/userController'
 router.route("/").get(validateToken, home);
 
 router.route("/signup").post(signup)
-router.route("/signup").put(signup)
-
+// router.route("/signup").put(signup) 
+// [] maile signup ko database role milai rathe
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -33,10 +33,6 @@ router.route("/signup/expert").post(validateToken,upload.fields([{ name: 'resume
 
 
 router.route("/login").post(login)
-
-
-
-
 
 
 module.exports = router;

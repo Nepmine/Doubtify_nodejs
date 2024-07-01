@@ -1,4 +1,4 @@
-const {userschema,expertschema} = require('../models/userModule')
+const { userschema, expertschema } = require('../models/userModule')
 const jwt = require('jsonwebtoken')
 
 
@@ -11,6 +11,10 @@ const asyncHandler = require("express-async-handler") // it is for event handler
 const home = (req, res) => {
     const user = req.user;
     res.send(`Hello ${user.token}, How are you? Welcome to our home page. Decoded info: ${JSON.stringify(user.decoded)}`);
+    const decodedInfo = user.decoded;
+    console.log("[T]", decodedInfo)
+    // console.log("Username is :", user.decoded.username)
+    console.log("Username is :", decodedInfo.user.username)
 }
 
 
@@ -21,34 +25,49 @@ const home = (req, res) => {
 // @access public
 
 const expsignup = asyncHandler(async (req, res) => {
-    console.log(req.user.token)
-    console.log(req.body);
-    console.log(req.file);
 
+    // console.log("[E] Error Check :")
     const { title, description, jobtitle, links } = req.body;
     const resume = req.file ? req.file.filename : null;
     const proof = req.files['proof'].map(file => file.filename);
-        const library = req.files['library'].map(file => file.filename);
+    const library = req.files['library'].map(file => file.filename);
 
 
     if (!title || !description || !jobtitle || !proof) {
         res.status(400);
         throw new Error("Please fill the every essentials in the form");
-
     }
-    else {  
-        try{
-        const store = await expertschema.create({
-            title,
-            description,
-            jobtitle: Array.isArray(jobtitle) ? jobtitle : [jobtitle],
-            resume,
-            proof,
-            library,
-            links: Array.isArray(links) ? links : [links]
-        })
-        res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": req.body })
-    }catch(error){res.status(500).json({ message: error.message });}
+    else {
+        const decodedInfo = req.user.decoded;
+        username = decodedInfo.user.username;
+        try {
+            const store = await expertschema.create({
+                username,
+                title,
+                description,
+                jobtitle: Array.isArray(jobtitle) ? jobtitle : [jobtitle],
+                resume,
+                proof,
+                library,
+                links: Array.isArray(links) ? links : [links]
+            })
+            if (store) {
+                console.log("[T] Expert data submitted ::")
+                // console.log("Decoded info::", decodedInfo)
+                person = await userschema.findOne({ username: username })
+                if(!person.role.includes('expert')){
+                    person.role.push('expert')
+                await person.save();
+                }
+                
+                person = await userschema.findOne({ username: username })
+                console.log(person.role)
+                res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": req.body })
+            }
+            else console.log("[E] Role couldnot be modified to expert")
+
+        } catch (error) { res.status(500).json({ message: error.message }); }
+
     }
 })
 
@@ -61,20 +80,21 @@ const expsignup = asyncHandler(async (req, res) => {
 // @access private
 
 const signup = asyncHandler(async (req, res) => {
-    console.log(req.body);
+    console.log("req.body is :", req.body);
 
     const { fullname, email, username, password } = req.body;
     if (!fullname || !email || !username || !password) {
         res.status(400);
+        console.log("The fields are :", fullname, email, username, password)
         throw new Error("Please fill the every essentials in the form");
-
     }
     else {
-        const store = await userschema.create({ 
+        const store = await userschema.create({
             fullname,
             email,
             username,
-            password
+            password,
+            role: "user"
         })
         res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": req.body })
     }
@@ -120,10 +140,9 @@ const login = asyncHandler(async (req, res) => {
                     user: {
                         id: person._id,
                         username: person.username,
-                        email: person.email,
-                        role: ['user']
+                        email: person.email
                     }
-                }, process.env.SECRET_KEY, { expiresIn: "10m" })
+                }, process.env.SECRET_KEY, { expiresIn: "1d" })
                 console.log("Generated Token:", accesstoken);
                 res.status(200).json({ "message": "He is logged in", "token": accesstoken });
                 console.log("[T] User Logged in succesfully")

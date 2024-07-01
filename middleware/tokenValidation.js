@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const validateToken = asyncHandler(async (req, res, next) => {
     let token;
     const authHeader = req.headers.authorization || req.headers.Authorization;
+    
     if (authHeader && authHeader.startsWith("Bearer ")) {
         token = authHeader.split(" ")[1];
         // console.log(token)
@@ -13,14 +14,18 @@ const validateToken = asyncHandler(async (req, res, next) => {
                 res.status(401);
                 return res.json({ message: "You are not authorized" , _token: token});
             } else {
+                console.log("[T] Token Validated")
                 req.user = { decoded, token };  // Pass the decoded information
                 next();
             }
         });
-    } else {
+    } else { 
         res.status(401);
         console.log("Authorization header missing or invalid");
         return res.json({ message: "Authorization header missing or invalid" });
     }
 });
 module.exports = validateToken;
+
+
+

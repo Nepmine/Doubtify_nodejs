@@ -18,6 +18,9 @@ const userSchema = mongoose.Schema({   // define role
     password: {
         type: String,
         required: [true, "Please enter your Password"]
+    },
+    role:{
+        type:[String],
     }
 }, {
     timestamps: true,
