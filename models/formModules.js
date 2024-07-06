@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const doubt = mongoose.Schema({   // define role
+
+    username: {
+        type: String,
+    },
     doubt: {
         type: String,
         required: [true, "Please enter your doubt"]
@@ -16,10 +20,40 @@ const doubt = mongoose.Schema({   // define role
     doubtPictures: {
         type: [String]
     },
+    money: {
+        min: {
+            type: Number,
+            min: 0 // Minimum value for min to ensure it's non-negative
+        },
+        max: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+        currency: {
+            type: String,
+            default: 'INR'
+        }
+    },
+    time: {  // testing left to be done [I was here]
+        date: {
+            type: Date,
+            required: true
+        },
+        ranges: [String],
+        duration: {
+            type: String,
+            required: true
+        }
+    },
+    status:{
+        type: String
+    }
 }, {
     timestamps: true,
 });
 
-const doubtSchema = mongoose.model("Doubt", doubt);  
 
-module.exports = { doubtSchema};
+const doubtSchema = mongoose.model("Doubt", doubt);
+
+module.exports = { doubtSchema };

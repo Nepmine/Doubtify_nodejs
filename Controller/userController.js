@@ -1,4 +1,5 @@
 const { userschema, expertschema } = require('../models/userModule')
+const { doubtSchema } = require('../models/formModules')
 const jwt = require('jsonwebtoken')
 
 
@@ -8,14 +9,31 @@ const asyncHandler = require("express-async-handler") // it is for event handler
 // @route /
 // @access public
 
-const home = (req, res) => {
+const home = asyncHandler(async (req, res) => {
     const user = req.user;
-    res.send(`Hello ${user.token}, How are you? Welcome to our home page. Decoded info: ${JSON.stringify(user.decoded)}`);
     const decodedInfo = user.decoded;
-    console.log("[T]", decodedInfo)
-    // console.log("Username is :", user.decoded.username)
-    console.log("Username is :", decodedInfo.user.username)
-}
+    const username = decodedInfo.user.username
+
+
+    const expertAccount = await expertschema.findOne({ username: username });
+
+    // Filter notifications to find unread ones
+    if (expertAccount) {
+        const notifications = expertAccount.notifications
+        const unreadNotifications = notifications.filter(notification => !notification.read);
+        console.log(unreadNotifications);
+
+        // Calculate the count of unread notifications
+        const notificationCount = unreadNotifications.length;
+        console.log(notificationCount);
+        res.send(`Hello ${user.token}, How are you? Welcome to our home page. Notification count =${notificationCount} and notifications: ${unreadNotifications} `);
+    }
+    else {
+        console.log("0 Notifications");
+        res.send(`Hello ${user.token}, How are you? Welcome to our home page. Notification count =0 and notifications:Null `);
+    }
+
+})
 
 
 
@@ -27,13 +45,18 @@ const home = (req, res) => {
 const expsignup = asyncHandler(async (req, res) => {
 
     // console.log("[E] Error Check :")
-    const { title, description, jobtitle, links } = req.body;
+    const { title, description, jobtitle, expertese, links } = req.body;
     const resume = req.file ? req.file.filename : null;
     const proof = req.files['proof'].map(file => file.filename);
-    const library = req.files['library'].map(file => file.filename);
+    let library;
+    try {
+
+        library = req.files['library'].map(file => file.filename);
+    }
+    catch (err) { library = '' }
 
 
-    if (!title || !description || !jobtitle || !proof) {
+    if (!title || !description || !expertese || !proof) {
         res.status(400);
         throw new Error("Please fill the every essentials in the form");
     }
@@ -45,7 +68,8 @@ const expsignup = asyncHandler(async (req, res) => {
                 username,
                 title,
                 description,
-                jobtitle: Array.isArray(jobtitle) ? jobtitle : [jobtitle],
+                jobtitle,
+                expertese: Array.isArray(expertese) ? expertese : [expertese],
                 resume,
                 proof,
                 library,
@@ -55,14 +79,28 @@ const expsignup = asyncHandler(async (req, res) => {
                 console.log("[T] Expert data submitted ::")
                 // console.log("Decoded info::", decodedInfo)
                 person = await userschema.findOne({ username: username })
-                if(!person.role.includes('expert')){
+                if (!person.role.includes('expert')) {
                     person.role.push('expert')
-                await person.save();
+                    await person.save();
                 }
-                
+
+                // for displaying first notifications to the expert :::
+                const newNotifications = await doubtSchema.find({
+                    field: { $in: expertese }
+                });
+                let Notification=[]
+                for(let i of newNotifications){
+                    Notification.push(`From ${i.username} with doubt id: ${i._id} has a doubt for you :: ${i.doubt} with duration ${i.time.duration}`)
+                } // 
+                console.log("Work for him ::", Notification)
+
                 person = await userschema.findOne({ username: username })
                 console.log(person.role)
-                res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": req.body })
+                res.status(201).json({
+                    'message': "Field submitted in database successfully: ",
+                    "data": req.body,
+                    "Notification": Notification
+                })
             }
             else console.log("[E] Role couldnot be modified to expert")
 

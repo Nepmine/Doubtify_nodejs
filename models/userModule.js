@@ -19,9 +19,28 @@ const userSchema = mongoose.Schema({   // define role
         type: String,
         required: [true, "Please enter your Password"]
     },
-    role:{
-        type:[String],
-    }
+    role: {
+        type: [String],
+    },
+    notifications: [{
+        message: String,
+        timestamp: {
+            type: Date,
+            default: Date.now
+        },
+        read: {
+            type: Boolean,
+            default: false
+        }
+    }],
+    meetings:[{
+        doubtId:{
+            type: String,
+        }, rating:{
+            type: Number,
+            min:0,
+            max:10
+        }}]
 }, {
     timestamps: true,
 });
@@ -30,6 +49,9 @@ const userSchema = mongoose.Schema({   // define role
 
 
 const expertSchema = mongoose.Schema({
+    username: {
+        type: String,
+    },
     title: {
         type: String,
         required: [true]
@@ -38,7 +60,10 @@ const expertSchema = mongoose.Schema({
         type: String,
         required: [true]
     },
-    jobtitle: { //  array
+    jobtitle: { 
+        type: String,
+    },
+    expertese: { //  array
         type: [String],
         required: [true]
     },
@@ -55,10 +80,33 @@ const expertSchema = mongoose.Schema({
     links: {
         type: [String],
     },
+    notifications: [{
+        message: String,
+        timestamp: {
+            type: Date,
+            default: Date.now
+        },
+        read: {
+            type: Boolean,
+            default: false
+        }
+    }],
+    meetings:[{
+        doubtId:{
+            type: String,
+        },status:{
+            type: String,
+        }, rating:{
+            type: Number,
+            min:0,
+            max:10
+        },comment:{
+            type: String
+        }}]
 }, {
     timestamps: true,
 });
-// export garna baki xa
+// export ma kaam garna baki xa
 // give valid name to photoes n maybe password hashing using  [pre] 
 
 
