@@ -1,1 +1,1 @@
-user
+const session = require('express-session');

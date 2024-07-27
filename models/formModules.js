@@ -29,10 +29,6 @@ const doubt = mongoose.Schema({   // define role
             type: Number,
             required: true,
             min: 0
-        },
-        currency: {
-            type: String,
-            default: 'INR'
         }
     },
     time: {  // testing left to be done [I was here]
@@ -46,14 +42,42 @@ const doubt = mongoose.Schema({   // define role
             required: true
         }
     },
-    status:{
-        type: String
+    status: {
+        type: String,
+        default: "Doubt submitted"
+        //Doubt submitted
+        // Selected
+        // completed
     }
 }, {
     timestamps: true,
 });
 
 
-const doubtSchema = mongoose.model("Doubt", doubt);
+const meetingFinal = mongoose.Schema({
+    doubtId: {
+        type: String,
+        required: true
+    },
+    finalMoney: {
+        type: String,
+        required: true
+    },
+    finalTime: {
+        type: String,
+        required: true
+    },
+    rating: {
+        type: Number,
+        min: 0,
+        max: 10
+    },
+    comment: {
+        type: String
+    }
+});
 
-module.exports = { doubtSchema };
+const doubtSchema = mongoose.model("Doubt", doubt);
+const meetingFinalSchema = mongoose.model("MeetingFinal", meetingFinal);
+
+module.exports = { doubtSchema, meetingFinalSchema };

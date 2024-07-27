@@ -21,6 +21,7 @@ const userSchema = mongoose.Schema({   // define role
     },
     role: {
         type: [String],
+        default: ['user']
     },
     notifications: [{
         message: String,
@@ -33,14 +34,23 @@ const userSchema = mongoose.Schema({   // define role
             default: false
         }
     }],
-    meetings:[{
-        doubtId:{
+    meetings: [{
+        ongoing: {
+            type: Boolean,
+            default: true   // It is created to check if the meeting is finished or not
+        },
+        role: {
+            type: String
+            // Learner
+            //Expert
+        },
+        doubtId: {
             type: String,
-        }, rating:{
-            type: Number,
-            min:0,
-            max:10
-        }}]
+        },
+        meetingId:{
+            type: String
+        },
+    }]
 }, {
     timestamps: true,
 });
@@ -60,7 +70,7 @@ const expertSchema = mongoose.Schema({
         type: String,
         required: [true]
     },
-    jobtitle: { 
+    jobtitle: {
         type: String,
     },
     expertese: { //  array
@@ -91,18 +101,24 @@ const expertSchema = mongoose.Schema({
             default: false
         }
     }],
-    meetings:[{
-        doubtId:{
-            type: String,
-        },status:{
-            type: String,
-        }, rating:{
-            type: Number,
-            min:0,
-            max:10
-        },comment:{
+    meetings: [{
+        ongoing: {
+            type: Boolean,
+            default: true   // It is created to check if the meeting is finished or not
+        },
+        role: {
             type: String
-        }}]
+            // learner
+            //teacher
+        },
+        doubtId: {
+            type: String,
+        },
+        meetingId:{
+            type: String
+        },
+        
+    }]
 }, {
     timestamps: true,
 });

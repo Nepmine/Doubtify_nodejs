@@ -27,7 +27,8 @@ formrouter.route("/doubt").post(validateToken,uploadfiles.fields([{ name: 'doubt
 
 
 //       /user/notification route              [<--- Confusion can be caused]
-formrouter.route("/notifications").get(validateToken, notifications);
+formrouter.route("/notifications").get(notifications); // for getting users notifications
+// I tried using sessions in here
 
 formrouter.route("/notification").get(validateToken, notification); // to get the clicked notification details
 

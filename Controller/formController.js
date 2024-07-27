@@ -1,16 +1,17 @@
-const { doubtSchema } = require('../models/formModules')
+const { doubtSchema, meetingFinalSchema } = require('../models/formModules')
 const { expertschema, userschema } = require('../models/userModule')
 const asyncHandler = require("express-async-handler")
+const session = require('express-session');
 
 
 
-// @desc doubt submition for expert       --------------------------------Doubt submition----------------------------
+// @desc doubt submition for expert       -------------------------------- Doubt submition ------------------------------
 // @route /user/signup
 // @access private
 const userdoubt = asyncHandler(async (req, res) => {
 
     // console.log("[C] Error Check :")
-    const { doubt, doubtDiscription, field, minMoney, maxMoney, currency, date, ranges, duration} = req.body;
+    const { doubt, doubtDiscription, field, minMoney, maxMoney, date, ranges, duration } = req.body;
     let doubtPictures;
     try {
 
@@ -28,7 +29,7 @@ const userdoubt = asyncHandler(async (req, res) => {
             const decodedInfo = req.user.decoded;
             username = decodedInfo.user.username;
 
-            const store = await doubtSchema.create({
+            const store = await doubtSchema.create({                    
                 username,
                 doubt,
                 doubtDiscription,
@@ -36,26 +37,27 @@ const userdoubt = asyncHandler(async (req, res) => {
                 doubtPictures,
                 money: {
                     min: minMoney,
-                    max: maxMoney,
-                    currency
+                    max: maxMoney
                 },
-                currency,
                 time: {
                     date,
                     ranges,
                     duration
                 },
-                status:"Doubt submitted"
+                status: "Doubt submitted"
             })
+            const user = await userschema.findOne({ username })
+            const doubtSource = await doubtSchema.findOne({ username: username });
+            const doubtId = doubtSource._id;
+            user.meetings.push({ role: 'learner', doubtId })  // I was fixing this
+
             {
                 const usernameCopy = username
-
                 const skilledExperts = await expertschema.find({ expertese: { $in: field } });
                 skilledExpertsUsername = skilledExperts.map(user => user.username)
                 console.log("[T] Experts are ::", skilledExpertsUsername)
 
-                const doubtSource = await doubtSchema.findOne({ username: username });
-                const doubtId = doubtSource._id;
+
                 console.log("[T] The data is ", doubtId);
 
 
@@ -85,37 +87,45 @@ const userdoubt = asyncHandler(async (req, res) => {
 
 
 
-// @desc notifications request. It loads with home page  --------------------------------Get notifications home page----------------------------
+// @desc request for notifications --------------------------- Get UNREAD notifications NUMBERS for bell icon  ----------------------------
+// it is for expert to get notification on home page
 // @route get : user/notifications
 // @access private
 const notifications = asyncHandler(async (req, res) => {
     try {
-        const decodedInfo = req.user.decoded;
-        username = decodedInfo.user.username;
-        const unreadNotifications = await expertschema.find(
-            { username: username },
-            { notifications: { $elemMatch: { read: false } } }
-        )
-        if(unreadNotifications){
-        unreadNotificationsCount=unreadNotifications.lean()
-        res.status(202).send(unreadNotifications)
-        console.log(unreadNotifications)
-        }
+        const username = req.session.username;  // if there is username undefined, its coz you didnot proceed with login and stuff correctly
+        console.log(username);
+        const user = await expertschema.findOne({ username })
+        if (user) {
+            const unreadNotifications = user.notifications.filter(notification => !notification.read);
+            if (unreadNotifications.length > 0) {
+                console.log(unreadNotifications)
+                res.status(202).send(unreadNotifications)
+            }
+            else {
+                res.send("Sorry, no notifications")
+            }
+        } else
+            res.send("username is invalid")
 
-    } catch (e) { console.log("[E] Error while fatching unread notifications") }
+    } catch (e) {
+        console.log("[E] Error while fatching unread notifications", e)
+        res.status(500).send("An error occurred while fetching notifications");
+    }
 })
 
 
 
-// @desc Expert asks the doubt discription --------------------------------Doubt description request----------------------------
+// @desc Expert asks the doubt discription ----------------------------- Doubt description request ----------------------------
 // @route get : user/notification
 // @access private
 const notification = asyncHandler(async (req, res) => {
     try {
         // Access headers correctly
-        const userUsername = req.headers.username; // it is the username of user with doubt
-        const userDoubtId = req.headers.doubtid; // same here
+        const userUsername = req.body.username; // it is the username of user with doubt
+        const userDoubtId = req.body.doubtId; // same here
 
+        console.log(userUsername, userDoubtId)
         if (!userUsername || !userDoubtId) {
             console.log("Username and DoubtId should be submitted for getting doubt");
             return res.status(400).json({ error: "Username and DoubtId should be submitted for getting doubt" });
@@ -141,7 +151,7 @@ const notification = asyncHandler(async (req, res) => {
 
 
 
-// @desc Notification by expert to finalize price --------------------------------final time Expert Dicision----------------------------
+// @desc Notification by expert to finalize price -----------------------------final time Expert Dicision ----------------------------
 // @route post : user/notification/finalTimenPrice
 // @access public
 const finalTimenPrice = asyncHandler(async (req, res) => {  // public route 
@@ -154,49 +164,107 @@ const finalTimenPrice = asyncHandler(async (req, res) => {  // public route
 
         const userWithDoubt = await userschema.findOne({ username: username });
         console.log(userWithDoubt)
-        
-        userWithDoubt.notifications.push({message: `Expert ${expertname} has agreed to take meeting doubtId:${doubtId} at ${finalTime} for ${finalDuration} with RS${finalPrice}.`})
+
+        userWithDoubt.notifications.push({ message: `Expert ${expertname} has agreed to take meeting doubtId:${doubtId} at ${finalTime} for ${finalDuration} with RS${finalPrice}.` })
         await userWithDoubt.save()
 
-        const doubt=doubtSchema.findOne({_id:doubtId})
-        if(doubt.status=="Doubt submitted")
-        doubt.status="Expert Options provided"
-        doubt.save();
+        const doubt = await doubtSchema.findOne({ _id: doubtId })
+        if (!doubt) {
+            return res.status(404).json({ error: 'Doubt not found' });
+        }
+        if (doubt.status == "Doubt submitted")
+            doubt.status = "Expert Options provided"
+        await doubt.save()
 
         res.status(200).send("Request send to the user..")
 
-    } catch (e) { console.log("[E] Error in finalNotification",e) }
+    } catch (e) { console.log("[E] Error in finalNotification", e) }
 })
 
 
 
-// @desc User selects the expert from the contained list -------------------------------- Expert selection by User----------------------------
+// @desc User selects the expert from the contained list -------------------------------- Expert selection by User ----------------------------
 // @route post : expert/notification/selected
 // @access private
 const selectExpert = asyncHandler(async (req, res) => {  // public route
     try {
-        const {expertname, finalPrice, finalTime, finalDuration, doubtId} = req.body;
-        // changed my mind and doing via body, we can inserting using post in js easily ...
-        if (!expertname) {
-            return res.status(400).json({ error: 'expertname not found ' });
-            console.log("expertname not found code in: in Expert selection by user")
-        }
-        const expertPurposing = await expertschema.findOne({ username: expertname });
-        const decodedInfo = req.user.decoded;
-        username = decodedInfo.user.username;
-        
+        const { expertname, finalPrice, finalTime, finalDuration, doubtId } = req.body;
+        // changed my mind and doing via body, we can insert using post in js easily ...
+        if(!expertname || !finalPrice || !finalTime || !finalDuration || !doubtId)
+        {
+            console.log("[E] Data insufficient ... [Expert selection by User]")
+            return res.status(404).json({ error: ' Data insufficient' });
 
-        expertPurposing.notifications.push({message: `Your meeting is conformed at ${finalTime} with Rs${finalPrice} with ${username} for ${finalDuration} hour, Dont be late !!`})
-        expertPurposing.meetings={doubtId,status:"Selected"}
+        }
+
+        const expertPurposing = await expertschema.findOne({ username: expertname });
+        if (!expertPurposing) {
+            return res.status(404).json({ error: 'Expert not found' });
+        }
+        
+        const decodedInfo = req.user.decoded;
+        const username = decodedInfo.user.username;
+        
+        // meeting id generation for zegoCloud
+        const roomID = `room_${expertname.charAt(0)}` + Math.floor(Math.random() * 1000);
+        
+        try { // to set initials in meetingFinalSchema
+            const store = await meetingFinalSchema.create({
+                doubtId,    
+                finalTime,
+                finalMoney: finalPrice,
+            })
+            if (store) {
+                console.log("[T] Expert data submitted ::")
+            }
+        } catch (error) { console.log("[E] Error while inserting data in meetingFinalSchema in formController [Expert Selection by user], error:", error.message) }
+        
+        
+        const meetingExtract = await meetingFinalSchema.findOne({ doubtId })
+        if(!meetingExtract){
+            console.log("Improper doubtId",doubtId)
+            return res.status(404).json({ error: `Invalid DoubtId: ${doubtId}` });
+        }
+        const meetingId = meetingExtract._id
+
+        expertPurposing.meetings.push({ role: 'Expert', doubtId, meetingId })
+
+        expertPurposing.notifications.push({ message: `[Conformed] Your meeting for DoubtID: ${doubtId} is conformed at ${finalTime} with Rs${finalPrice} with ${username} for ${finalDuration} hour.Your room ID: ${roomID} Dont be late !!` })
         await expertPurposing.save()
 
-        const doubt=doubtSchema.findOne({_id:doubtId})
-        if(doubt.status=="Doubt submitted" || "Expert Options provided" )
-        doubt.status="Expert Selected expertID = ${expertname}"
-        doubt.save();
+        const user = await userschema.findOne({ username })
+        user.meetings.push({ role: 'Learner', doubtId,meetingId })
+        // const user=await userschema.findOne({username})
+        // user.meetings.push({role:'learner', doubtId, meetingId})
+        //  [Its been done already while sending notification]
 
-        res.status(200).json({message: `For DoubtID: ${doubtId}, The meeting is conformed at ${finalTime} with Rs${finalPrice} for ${finalDuration} hour long with ${expertname} for final`})
-    } catch (e) { console.log("[E] Error in finalNotification",e) }
+        user.notifications.push({ message: `[Conformed] Your meeting for DoubtID: ${doubtId} is conformed at ${finalTime} with Rs${finalPrice} with ${username} for ${finalDuration} hour.Your room ID: ${roomID} Dont be late !!` })
+        await user.save()
+
+
+        const doubt = await doubtSchema.findOne({ _id: doubtId })
+        console.log(doubt)
+        console.log(doubt.status)
+        if (doubt.status == "Doubt submitted" || doubt.status== "Expert Options provided") {
+            doubt.status = `Expert Selected`
+            await doubt.save();
+        }
+
+        // res.status(200).json({ message: `For DoubtID: ${doubtId}, The meeting is conformed at ${finalTime} with Rs${finalPrice} for ${finalDuration} hour long with ${expertname} for final` })
+        res.status(200).json({
+            message: "The meeting has been confirmed.",
+            doubtId: doubtId,
+            finalTime: finalTime,
+            finalPrice: finalPrice,
+            finalDuration: finalDuration,
+            expertName: expertname,
+            roomID
+        });
+    } catch (e) {
+        console.log("[E] Error in finalNotification", e)
+        res.status(500).json({ error: "An error occurred on formController." });
+    }
 })
+
 
 module.exports = { userdoubt, notifications, notification, finalTimenPrice, selectExpert };
