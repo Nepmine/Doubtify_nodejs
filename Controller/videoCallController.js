@@ -4,7 +4,8 @@ const { meetingFinalSchema } = require('../models/formModules')
 const session = require('express-session');
 const jwt = require('jsonwebtoken')
 const asyncHandler = require("express-async-handler")
-const WebSocket = require('ws');
+const {wss, sendMessageToUser} = require('../ws/websocketServer');
+
 
 // desc: made for demo purpose to check if someone joined the room
 //Path: /call/initiate
@@ -97,33 +98,43 @@ const checkMeeting = asyncHandler(async (req, res) => {
 
 
 //@disc: It just passes the information if the other has joined or not
+// method:: post
 // //Path: /call/join
 const joinButton = asyncHandler(async (req, res) => {
 
     let { expertCheck/*Boolean*/ } = req.body;
-    expertCheck = expertCheck === '1';
+    expertCheck = expertCheck === '1'; // if the person clicked the button is user or expert
     console.log(expertCheck)
     if(!req.session) console.log("Session Error !!!")
     const username = req.session.username;
     console.log(username)
+    const expert = await expertschema.findOne({ username })
+    const learner = await userschema.findOne({ username })
 
-    if (!expertCheck) { // if it is learner, notification should be given to Learner that he joined
-        const expert = await expertschema.findOne({ username })
+    if (!expertCheck) { // if it is learner, notification should be given to expert that he joined
         if (expert) {
             expert.notifications.push({ message: `[Meeting] : Expert joined the session` });
             console.log("Message sent successfully to :",expert.username)
             await expert.save();
+
+            // for webSocket
+                const message = `User ${learner.username} has joined the meeting and is waiting for start ...`
+                sendMessageToUser(learner.username, message);
         } else {
             return res.status(404).send('Expert not found');
             console.log("Expert not found")
         }
     }
     else {
-        const learner = await userschema.findOne({ username })
         if (learner) {
             learner.notifications.push({ message: `[Meeting] : Learner joined the session` });
             console.log("Message sent successfully to :",learner.username)
             await learner.save();
+
+            // for webSocket
+                const message = `Expert ${expert.username} has joined the meeting and is waiting for start ...`
+                sendMessageToUser(expert.username, message);
+
         } else {
             console.log("Learner not found")
             return res.status(404).send('Learner not found');
@@ -132,48 +143,21 @@ const joinButton = asyncHandler(async (req, res) => {
     }
 
 })
+
+
 
 
 // Title: 10 minutes interval
+// method:: get
 /* @disc: One in previous, we had checked if there was a meeting, from that frontend developers will find out if 
 there is a meeting. If any meeting was 10 minutes gap, this function is called  */
-// //Path: /call/join
+//Path: ws://localhost:8080/call/tenMin
 const hasMeeting = asyncHandler(async (req, res) => {
+    console.log("Hello there")
+    // usually it doesnot do anything
+})  
 
-    let { expertCheck/*Boolean*/ } = req.body;
-    expertCheck = expertCheck === '1';
-    console.log(expertCheck)
-    if(!req.session) console.log("Session Error !!!")
-    const username = req.session.username;
-    console.log(username)
-
-    if (!expertCheck) { // if it is learner, notification should be given to Learner that he joined
-        const expert = await expertschema.findOne({ username })
-        if (expert) {
-            expert.notifications.push({ message: `[Meeting] : Expert joined the session` });
-            console.log("Message sent successfully to :",expert.username)
-            await expert.save();
-        } else {
-            return res.status(404).send('Expert not found');
-            console.log("Expert not found")
-        }
-    }
-    else {
-        const learner = await userschema.findOne({ username })
-        if (learner) {
-            learner.notifications.push({ message: `[Meeting] : Learner joined the session` });
-            console.log("Message sent successfully to :",learner.username)
-            await learner.save();
-        } else {
-            console.log("Learner not found")
-            return res.status(404).send('Learner not found');
-        }
-        res.status(200).send('Joined successfully');
-    }
-
-})
-
-module.exports = { videoBasics, checkMeeting, joinButton }
+module.exports = { videoBasics, checkMeeting, joinButton,hasMeeting }
 
 
 
