@@ -5,7 +5,7 @@ const multer = require('multer')
 const validateToken = require('../middleware/tokenValidation')
 
 
-const { videoBasics, checkMeeting, joinButton, hasMeeting } = require('../Controller/videoCallController.js');
+const { videoBasics, checkMeeting, joinButton, hasMeeting, meetingFeedback } = require('../Controller/videoCallController.js');
 
 
 
@@ -17,5 +17,7 @@ videoCallRouter.route("/checkMeeting").get(validateToken, checkMeeting);
 videoCallRouter.route("/join").post(validateToken, joinButton);
 
 videoCallRouter.route("/TenMin").get(hasMeeting);
+
+videoCallRouter.route("/feedback").post(validateToken, meetingFeedback);
 
 module.exports = videoCallRouter;

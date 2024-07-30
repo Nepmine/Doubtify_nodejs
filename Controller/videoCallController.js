@@ -1,10 +1,10 @@
 
 const { userschema, expertschema } = require('../models/userModule')
-const { meetingFinalSchema } = require('../models/formModules')
+const { doubtSchema } = require('../models/formModules')
 const session = require('express-session');
 const jwt = require('jsonwebtoken')
 const asyncHandler = require("express-async-handler")
-const {wss, sendMessageToUser} = require('../ws/websocketServer');
+const { wss, sendMessageToUser } = require('../ws/websocketServer');
 
 
 // desc: made for demo purpose to check if someone joined the room
@@ -65,15 +65,13 @@ const checkMeeting = asyncHandler(async (req, res) => {
         console.log("There is no meeting scheduled of this person")
     }
     else {
-        // const { meetingFinalSchema } = require('../models/formModules')
         const time = []
         const timeExpert = ["expert"]
         if (expertMeetings.length) {
             //expertMeeting holds all the meetings in the expert schema
             for (const meeting of expertMeetings) {
-                const meetingId = meeting.meetingId
-                const meetfinal = await meetingFinalSchema.findOne({ _id: meetingId })
-                // meetfinal is holding the data of the videocall [The smaller one]
+                const doubtId = meeting.doubtId
+                const meetfinal = await doubtSchema.findOne({ _id: doubtId })
                 timeExpert.push(meetfinal.finalTime)
                 console.log(timeExpert)
                 console.log("------------------------------------------------------------------------")
@@ -84,8 +82,8 @@ const checkMeeting = asyncHandler(async (req, res) => {
         const timeLearner = ["learner"]
         if (userMeetings.length) {
             for (const meeting of userMeetings) {
-                const meetingId = meeting.meetingId
-                const meetfinal = await meetingFinalSchema.findOne({ _id: meetingId })
+                const doubtId = meeting.doubtId
+                const meetfinal = await doubtSchema.findOne({ _id: doubtId })
                 timeLearner.push(meetfinal.finalTime)
             }
             time.push(timeLearner)
@@ -105,7 +103,7 @@ const joinButton = asyncHandler(async (req, res) => {
     let { expertCheck/*Boolean*/ } = req.body;
     expertCheck = expertCheck === '1'; // if the person clicked the button is user or expert
     console.log(expertCheck)
-    if(!req.session) console.log("Session Error !!!")
+    if (!req.session) console.log("Session Error !!!")
     const username = req.session.username;
     console.log(username)
     const expert = await expertschema.findOne({ username })
@@ -114,12 +112,12 @@ const joinButton = asyncHandler(async (req, res) => {
     if (!expertCheck) { // if it is learner, notification should be given to expert that he joined
         if (expert) {
             expert.notifications.push({ message: `[Meeting] : Expert joined the session` });
-            console.log("Message sent successfully to :",expert.username)
+            console.log("Message sent successfully to :", expert.username)
             await expert.save();
 
             // for webSocket
-                const message = `User ${learner.username} has joined the meeting and is waiting for start ...`
-                sendMessageToUser(learner.username, message);
+            const message = `User ${learner.username} has joined the meeting and is waiting for start ...`
+            sendMessageToUser(learner.username, message);
         } else {
             return res.status(404).send('Expert not found');
             console.log("Expert not found")
@@ -128,13 +126,12 @@ const joinButton = asyncHandler(async (req, res) => {
     else {
         if (learner) {
             learner.notifications.push({ message: `[Meeting] : Learner joined the session` });
-            console.log("Message sent successfully to :",learner.username)
+            console.log("Message sent successfully to :", learner.username)
             await learner.save();
 
             // for webSocket
-                const message = `Expert ${expert.username} has joined the meeting and is waiting for start ...`
-                sendMessageToUser(expert.username, message);
-
+            const message = `Expert ${expert.username} has joined the meeting and is waiting for start ... `
+            sendMessageToUser(expert.username, message);
         } else {
             console.log("Learner not found")
             return res.status(404).send('Learner not found');
@@ -155,10 +152,51 @@ there is a meeting. If any meeting was 10 minutes gap, this function is called  
 const hasMeeting = asyncHandler(async (req, res) => {
     console.log("Hello there")
     // usually it doesnot do anything
-})  
-
-module.exports = { videoBasics, checkMeeting, joinButton,hasMeeting }
-
+})
 
 
 // things left to do
+
+// ----------------------------------------------- After Meeting --------------------------------------------
+
+
+// Title: feedback
+// method:: post
+/* @disc:   user giving feedback to the expert */
+const meetingFeedback = asyncHandler(async (req, res) => {  // unchecked, sort of time...
+    const decodedInfo = req.user.decoded;
+    const username = decodedInfo.user.username
+    const ifExpert = decodedInfo.user.ifExpert
+    let person
+    if(ifExpert){ 
+        person = await userschema.findOne({ username}) // if expert, feedback should be given to learner
+    }else{
+        person = await expertschema.findOne({ username})
+    }
+    const {rating, comment} = req.body
+    console.log(person)
+    console.log(rating,comment)
+    if(!(rating && comment))
+        res.err("Please provide rating and comment")
+    console.log(person.meeting)  
+    person.meeting.rating=rating  // yo radi ko meeting nai vaxaina, postman bata garayera check garni ...
+    person.meeting.comment=comment
+    await person.save()
+
+    const meetings= person.meetings
+    let meeting = meetings[meetings.length - 1];
+
+    const doubt= await doubtSchema.findOne({_id:meeting.doubtId})  // I can check the time and give result ... modification rquired
+    doubt.status="Meeting Completed"
+
+    res.status(200).send("Thanks for your feedback")
+})
+
+
+
+
+
+
+
+
+module.exports = { videoBasics, checkMeeting, joinButton, hasMeeting, meetingFeedback }

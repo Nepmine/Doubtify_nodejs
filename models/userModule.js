@@ -47,10 +47,22 @@ const userSchema = mongoose.Schema({   // define role
         doubtId: {
             type: String,
         },
-        meetingId:{
-            type: String
+        rating: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 7
         },
-    }]
+        comment: {
+            type: String,
+            default: "They didnot provided any review :("
+        }
+    }],
+    lastState:{
+        type: String,
+        default: "learner"
+        //expert
+    }
 }, {
     timestamps: true,
 });
@@ -114,10 +126,17 @@ const expertSchema = mongoose.Schema({
         doubtId: {
             type: String,
         },
-        meetingId:{
-            type: String
+        rating: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 7
         },
-        
+        comment: {
+            type: String,
+            default: "They didnot provided any review :("
+        }
+
     }]
 }, {
     timestamps: true,

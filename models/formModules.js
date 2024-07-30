@@ -34,7 +34,7 @@ const doubt = mongoose.Schema({   // define role
     time: {  // testing left to be done [I was here]
         date: {
             type: Date,
-            required: true
+            required: true 
         },
         ranges: [String],
         duration: {
@@ -47,37 +47,22 @@ const doubt = mongoose.Schema({   // define role
         default: "Doubt submitted"
         //Doubt submitted
         // Selected
-        // completed
+        // Meeting Completed
+    },
+    finalMoney: {
+        type: Number,
+        default: 0
+    },
+    finalTime: {
+        type: String,
     }
 }, {
     timestamps: true,
 });
 
 
-const meetingFinal = mongoose.Schema({
-    doubtId: {
-        type: String,
-        required: true
-    },
-    finalMoney: {
-        type: String,
-        required: true
-    },
-    finalTime: {
-        type: String,
-        required: true
-    },
-    rating: {
-        type: Number,
-        min: 0,
-        max: 10
-    },
-    comment: {
-        type: String
-    }
-});
+
 
 const doubtSchema = mongoose.model("Doubt", doubt);
-const meetingFinalSchema = mongoose.model("MeetingFinal", meetingFinal);
 
-module.exports = { doubtSchema, meetingFinalSchema };
+module.exports = { doubtSchema};

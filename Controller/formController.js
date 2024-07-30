@@ -1,4 +1,4 @@
-const { doubtSchema, meetingFinalSchema } = require('../models/formModules')
+const { doubtSchema } = require('../models/formModules')
 const { expertschema, userschema } = require('../models/userModule')
 const asyncHandler = require("express-async-handler")
 const session = require('express-session');
@@ -29,7 +29,7 @@ const userdoubt = asyncHandler(async (req, res) => {
             const decodedInfo = req.user.decoded;
             username = decodedInfo.user.username;
 
-            const store = await doubtSchema.create({                    
+            const store = await doubtSchema.create({
                 username,
                 doubt,
                 doubtDiscription,
@@ -51,36 +51,36 @@ const userdoubt = asyncHandler(async (req, res) => {
             const doubtId = doubtSource._id;
             user.meetings.push({ role: 'learner', doubtId })  // I was fixing this
 
-            {
-                const usernameCopy = username
-                const skilledExperts = await expertschema.find({ expertese: { $in: field } });
-                skilledExpertsUsername = skilledExperts.map(user => user.username)
-                console.log("[T] Experts are ::", skilledExpertsUsername)
+
+            const usernameCopy = username
+            const skilledExperts = await expertschema.find({ expertese: { $in: field } });
+            skilledExpertsUsername = skilledExperts.map(user => user.username)
+            console.log("[T] Experts are ::", skilledExpertsUsername)
 
 
-                console.log("[T] The data is ", doubtId);
+            console.log("[T] The data is ", doubtId);
 
 
-                for (const _expert of skilledExpertsUsername) {
-                    await expertschema.updateOne(
-                        { username: _expert },
-                        {
-                            $push: {
-                                notifications: {
-                                    message: `From ${usernameCopy} with doubt id: ${doubtId} has a doubt for you :: ${doubt} with duration ${duration}`
-                                }
+            for (const _expert of skilledExpertsUsername) {
+                await expertschema.updateOne(
+                    { username: _expert },
+                    {
+                        $push: {
+                            notifications: {
+                                message: `From ${usernameCopy} with doubt id: ${doubtId} has a doubt for you :: ${doubt} with duration ${duration}`
                             }
                         }
-                    );
-                }
-                console.log("[T] Notification send successfully ..")
-                // if this works, I have to find a way to send doubt to frontend by checking the unreaded doubts in his schema
-                // also send notification every time a new notification appears in his notificationSection in schema
+                    }
+                );
             }
+            console.log("[T] Notification send successfully ..")
+            // if this works, I have to find a way to send doubt to frontend by checking the unreaded doubts in his schema
+            // also send notification every time a new notification appears in his notificationSection in schema
+
 
 
             console.log("[T] Doubt data submitted successfully !!")
-            res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": req.body })
+            res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": doubtSource })
         } catch (error) { res.status(500).json({ message: `[E] There was error in formController Doubt submission :${error.message}` }); }
     }
 });
@@ -190,8 +190,7 @@ const selectExpert = asyncHandler(async (req, res) => {  // public route
     try {
         const { expertname, finalPrice, finalTime, finalDuration, doubtId } = req.body;
         // changed my mind and doing via body, we can insert using post in js easily ...
-        if(!expertname || !finalPrice || !finalTime || !finalDuration || !doubtId)
-        {
+        if (!expertname || !finalPrice || !finalTime || !finalDuration || !doubtId) {
             console.log("[E] Data insufficient ... [Expert selection by User]")
             return res.status(404).json({ error: ' Data insufficient' });
 
@@ -201,41 +200,28 @@ const selectExpert = asyncHandler(async (req, res) => {  // public route
         if (!expertPurposing) {
             return res.status(404).json({ error: 'Expert not found' });
         }
-        
+
         const decodedInfo = req.user.decoded;
         const username = decodedInfo.user.username;
-        
+        console.log(finalPrice)
         // meeting id generation for zegoCloud
         const roomID = `room_${expertname.charAt(0)}` + Math.floor(Math.random() * 1000);
-        
-        try { // to set initials in meetingFinalSchema
-            const store = await meetingFinalSchema.create({
-                doubtId,    
-                finalTime,
-                finalMoney: finalPrice,
-            })
-            if (store) {
-                console.log("[T] Expert data submitted ::")
-            }
-        } catch (error) { console.log("[E] Error while inserting data in meetingFinalSchema in formController [Expert Selection by user], error:", error.message) }
-        
-        
-        const meetingExtract = await meetingFinalSchema.findOne({ doubtId })
-        if(!meetingExtract){
-            console.log("Improper doubtId",doubtId)
-            return res.status(404).json({ error: `Invalid DoubtId: ${doubtId}` });
-        }
-        const meetingId = meetingExtract._id
 
-        expertPurposing.meetings.push({ role: 'Expert', doubtId, meetingId })
+        const doubtDisc = await doubtSchema.findOne({ _id: doubtId })  // saving to DATABASE
+        doubtDisc.finalMoney = finalPrice
+        doubtDisc.finalTime = finalTime
+        await doubtDisc.save()
+
+        expertPurposing.meetings.push({ role: 'Expert', doubtId })
+
 
         expertPurposing.notifications.push({ message: `[Conformed] Your meeting for DoubtID: ${doubtId} is conformed at ${finalTime} with Rs${finalPrice} with ${username} for ${finalDuration} hour.Your room ID: ${roomID} Dont be late !!` })
         await expertPurposing.save()
 
         const user = await userschema.findOne({ username })
-        user.meetings.push({ role: 'Learner', doubtId,meetingId })
+        user.meetings.push({ role: 'Learner', doubtId })
         // const user=await userschema.findOne({username})
-        // user.meetings.push({role:'learner', doubtId, meetingId})
+        // user.meetings.push({role:'learner', doubtId})
         //  [Its been done already while sending notification]
 
         user.notifications.push({ message: `[Conformed] Your meeting for DoubtID: ${doubtId} is conformed at ${finalTime} with Rs${finalPrice} with ${username} for ${finalDuration} hour.Your room ID: ${roomID} Dont be late !!` })
@@ -245,7 +231,7 @@ const selectExpert = asyncHandler(async (req, res) => {  // public route
         const doubt = await doubtSchema.findOne({ _id: doubtId })
         console.log(doubt)
         console.log(doubt.status)
-        if (doubt.status == "Doubt submitted" || doubt.status== "Expert Options provided") {
+        if (doubt.status == "Doubt submitted" || doubt.status == "Expert Options provided") {
             doubt.status = `Expert Selected`
             await doubt.save();
         }

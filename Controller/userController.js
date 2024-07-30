@@ -13,7 +13,7 @@ const home = asyncHandler(async (req, res) => {
     const user = req.user;
     const decodedInfo = user.decoded;
     const username = decodedInfo.user.username
-    
+
 
     const expertAccount = await expertschema.findOne({ username: username });
 
@@ -48,7 +48,7 @@ const expsignup = asyncHandler(async (req, res) => {
     const { title, description, jobtitle, expertese, links } = req.body;
     const resume = req.file ? req.file.filename : null;
     const proof = req.files['proof'] ? req.files['proof'].map(file => file.filename) : [];
-    const library = req.files['library'] ? req.files['library'].map(file => file.filename):[];
+    const library = req.files['library'] ? req.files['library'].map(file => file.filename) : [];
 
 
 
@@ -84,8 +84,8 @@ const expsignup = asyncHandler(async (req, res) => {
                 const newNotifications = await doubtSchema.find({
                     field: { $in: expertese }
                 });
-                let Notification=[]
-                for(let i of newNotifications){
+                let Notification = []
+                for (let i of newNotifications) {
                     Notification.push(`From ${i.username} with doubt id: ${i._id} has a doubt for you :: ${i.doubt} with duration ${i.time.duration}`)
                 } // 
                 console.log("Work for him ::", Notification)
@@ -155,14 +155,14 @@ const login = asyncHandler(async (req, res) => {
     else {
         const emailPattern = /^\S+@\S+\.\S+$/;
 
-        
+
         let person;
         let accesstoken;
         let username
-        const isUsername=true
+        const isUsername = true
         if (emailPattern.test(emailOrUsername)) {// email is used
             person = await userschema.findOne({ email: emailOrUsername })
-            isUsername=false
+            isUsername = false
         }
         else {// username is used
             person = await userschema.findOne({ username: emailOrUsername })
@@ -171,24 +171,28 @@ const login = asyncHandler(async (req, res) => {
         if (!person)
             res.status(400).json({ message: "Invalid email or password" })
         else {
-            username= person.username
+            username = person.username
 
             if (person.password === password) {// log him   // need to change the role to expert also during expert login
-                
+
+                const lastState = person.lastState
+                let ifExpert = (lastState === 'expert');  // checking in the database for his lastest state before logout
+
 
                 accesstoken = jwt.sign({
                     user: {
                         username: person.username,
-                        email: person.email
+                        email: person.email,
+                        ifExpert
                     }
                 }, process.env.SECRET_KEY, { expiresIn: "1w" })
                 console.log("Generated Token:", accesstoken);
-                
+
                 req.session.username = person.username;
                 req.session.cookie.maxAge = 604800000;
-                console.log("HEllo ",req.session.username,", your Session is created")
+                console.log("HEllo ", req.session.username, ", your Session is created")
 
-                res.status(200).json({ "message": "He is logged in", "token": accesstoken });
+                res.status(200).json({ "message": "He is logged in", "token": accesstoken, "role": person.lastState });
                 console.log("[T] User Logged in succesfully")
             }
             else
@@ -198,6 +202,40 @@ const login = asyncHandler(async (req, res) => {
 
 })
 
+/* @desc Toggle user and expert, -------------------------------- Toggle Expert-User ----------------------------
+its main purpose is to change jwt token info for meeting */
+// @route /toggle
+// @access public
+
+const toggle = asyncHandler(async (req, res) => {
+    const decodedInfo = req.user.decoded;  // getting whole decoded values
+    if (decodedInfo.user.ifExpert) {
+        decodedInfo.user.ifExpert = false;
+    } else {
+        decodedInfo.user.ifExpert = true;
+    }
+    const newToken = jwt.sign({ user: decodedInfo.user }, process.env.SECRET_KEY, { expiresIn: '1w' });
+
+    //changing in database as well
+    const user = await userschema.findOne({ username: decodedInfo.user.username })
+    if (user) {
+        if (user.lastState == "expert") {
+            user.lastState = "expert"
+            console.log("Role switched to expert")
+        }
+        else {
+            user.lastState = "learner"
+            console.log("Role switched to learner")
+        }
+        await user.save()
+    }
+    else {
+        res.err("Username not found")
+    }
+
+    res.send(`Your state is changed with token ${newToken}`)
+})
 
 
-module.exports = { home, signup, expsignup, login }
+
+module.exports = { home, signup, expsignup, login, toggle }

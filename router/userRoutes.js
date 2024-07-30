@@ -8,7 +8,7 @@ const {userschema,expertschema }= require('../models/userModule')
 
 
 
-const { home, signup,expsignup, login } = require('../Controller/userController');
+const { home, signup,expsignup, login, toggle } = require('../Controller/userController');
 
 // Routes -------------------------------------
 
@@ -30,6 +30,8 @@ const upload = multer({ storage: storage });
 
 router.route("/signup/expert").post(validateToken,upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'proof', maxCount: 3 }, { name: 'library', maxCount: 3 }]), expsignup);
 
+
+router.route("/toggle").get(validateToken, toggle);
 
 
 router.route("/login").post(login)
