@@ -208,6 +208,7 @@ const selectExpert = asyncHandler(async (req, res) => {  // public route
         const roomID = `room_${expertname.charAt(0)}` + Math.floor(Math.random() * 1000);
 
         const doubtDisc = await doubtSchema.findOne({ _id: doubtId })  // saving to DATABASE
+        console.log(doubtDisc)
         doubtDisc.finalMoney = finalPrice
         doubtDisc.finalTime = finalTime
         await doubtDisc.save()

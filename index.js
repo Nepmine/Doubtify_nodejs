@@ -25,6 +25,7 @@ app.use(session({
     cookie: { secure: false } // Set to true if using HTTPS
 }));
 
+app.use("/request",require('./router/requestRoutes'))
 app.use("/user",require('./router/formRoutes'))
 app.use("/call", require('./router/videoCallRoutes'))
 app.use("/", require('./router/userRoutes'))
