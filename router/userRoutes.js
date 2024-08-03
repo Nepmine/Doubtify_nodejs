@@ -28,9 +28,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-router.route("/signup/expert").post(validateToken,upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'proof', maxCount: 3 }, { name: 'library', maxCount: 3 }]), expsignup);
+router.route("/signup/expert").post(validateToken,upload.fields([{ name: 'resume', maxCount: 1 }, { name: 'proof', maxCount: 5 }, { name: 'library', maxCount: 100 }]), expsignup);
 
-
+//toggle user and expert
 router.route("/toggle").get(validateToken, toggle);
 
 

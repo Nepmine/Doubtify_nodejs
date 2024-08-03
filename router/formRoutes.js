@@ -6,7 +6,7 @@ const validateToken = require('../middleware/tokenValidation')
 
 const {doubtSchema }= require('../models/formModules')
 
-const { userdoubt, notifications,notification, finalTimenPrice,selectExpert} = require('../Controller/formController');
+const { userdoubt, notifications,doubtRequest, bellclick, finalTimenPrice,selectExpert} = require('../Controller/formController');
 
 
 
@@ -27,12 +27,14 @@ formrouter.route("/doubt").post(validateToken,uploadfiles.fields([{ name: 'doubt
 
 
 //       /user/notification route              [<--- Confusion can be caused]
-formrouter.route("/notifications").get(notifications); // for getting users notifications
+formrouter.route("/notifications").get(validateToken,notifications); // for getting users notifications
 // I tried using sessions in here
 
-formrouter.route("/notification").get(validateToken, notification); // to get the clicked notification details
+formrouter.route("/doubtRequest").get(validateToken, doubtRequest); // to get the clicked notification details
 
-formrouter.route("/notification/finalTimenPrice").post(finalTimenPrice); // just added
+formrouter.route("/bellclicked").get(validateToken, bellclick);
+
+formrouter.route("/notification/finalTimenPrice").post(validateToken, finalTimenPrice); // just added
 
 formrouter.route("/notification/selectExpert").post(validateToken, selectExpert); // just added    
 

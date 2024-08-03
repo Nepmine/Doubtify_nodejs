@@ -6,7 +6,7 @@ const session = require('express-session');
 
 
 // @desc doubt submition for expert       -------------------------------- Doubt submition ------------------------------
-// @route /user/signup
+// @route http://localhost:8080/user/doubt
 // @access private
 const userdoubt = asyncHandler(async (req, res) => {
 
@@ -14,7 +14,6 @@ const userdoubt = asyncHandler(async (req, res) => {
     const { doubt, doubtDiscription, field, minMoney, maxMoney, date, ranges, duration } = req.body;
     let doubtPictures;
     try {
-
         doubtPictures = req.files['doubtPictures'].map(file => file.filename);
     }
     catch (err) { doubtPictures = '' }
@@ -80,7 +79,7 @@ const userdoubt = asyncHandler(async (req, res) => {
 
 
             console.log("[T] Doubt data submitted successfully !!")
-            res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": doubtSource })
+            res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": doubtId })
         } catch (error) { res.status(500).json({ message: `[E] There was error in formController Doubt submission :${error.message}` }); }
     }
 });
@@ -89,24 +88,44 @@ const userdoubt = asyncHandler(async (req, res) => {
 
 // @desc request for notifications --------------------------- Get UNREAD notifications NUMBERS for bell icon  ----------------------------
 // it is for expert to get notification on home page
-// @route get : user/notifications
+// @route get : http://localhost:8080/user/notifications
 // @access private
 const notifications = asyncHandler(async (req, res) => {
+
     try {
-        const username = req.session.username;  // if there is username undefined, its coz you didnot proceed with login and stuff correctly
+        const decodedInfo = req.user.decoded;
+        username = decodedInfo.user.username;  // if there is username undefined, its coz you didnot proceed with login and stuff correctly
+        ifExpert = decodedInfo.user.ifExpert;
         console.log(username);
-        const user = await expertschema.findOne({ username })
-        if (user) {
-            const unreadNotifications = user.notifications.filter(notification => !notification.read);
-            if (unreadNotifications.length > 0) {
-                console.log(unreadNotifications)
-                res.status(202).send(unreadNotifications)
-            }
-            else {
-                res.send("Sorry, no notifications")
-            }
-        } else
-            res.send("username is invalid")
+
+        if (!ifExpert) {
+            const user = await userschema.findOne({ username })
+            if (user) {
+                const unreadNotifications = user.notifications.filter(notification => !notification.read);
+                if (unreadNotifications.length > 0) {
+                    console.log(unreadNotifications)
+                    res.status(202).send(unreadNotifications)
+                }
+                else {
+                    res.send("Sorry, no notifications")
+                }
+            } else
+                res.send("username is invalid")
+        } else {
+            const expert = await expertschema.findOne({ username })
+            if (expert) {
+                const unreadNotifications = expert.notifications.filter(notification => !notification.read);
+                if (unreadNotifications.length > 0) {
+                    console.log(unreadNotifications)
+                    res.status(202).send(unreadNotifications)
+                }
+                else {
+                    res.send("Sorry, no notifications")
+                }
+            } else
+                res.send("expertname is invalid")
+
+        }
 
     } catch (e) {
         console.log("[E] Error while fatching unread notifications", e)
@@ -116,10 +135,11 @@ const notifications = asyncHandler(async (req, res) => {
 
 
 
+
 // @desc Expert asks the doubt discription ----------------------------- Doubt description request ----------------------------
-// @route get : user/notification
+// @route get : http://localhost:8080/user/doubtRequest
 // @access private
-const notification = asyncHandler(async (req, res) => {
+const doubtRequest = asyncHandler(async (req, res) => {
     try {
         // Access headers correctly
         const userUsername = req.body.username; // it is the username of user with doubt
@@ -151,16 +171,72 @@ const notification = asyncHandler(async (req, res) => {
 
 
 
-// @desc Notification by expert to finalize price -----------------------------final time Expert Dicision ----------------------------
-// @route post : user/notification/finalTimenPrice
-// @access public
-const finalTimenPrice = asyncHandler(async (req, res) => {  // public route 
+
+
+// @desc when bell is clicked --------------------------- Get UNREAD notifications NUMBERS for bell icon  ----------------------------
+// it is required to make notifications status read when user/expert views the notification
+// @route get : http://localhost:8080/user/bellclicked
+// @access private
+const bellclick = asyncHandler(async (req, res) => {
     try {
-        const { finalTime, finalPrice, username, expertname, finalDuration, doubtId } = req.body; // username -> The one had a doubt
+        const decodedInfo = req.user.decoded;
+        username = decodedInfo.user.username;
+        console.log(username);
+        if (decodedInfo.user.ifExpert) {
+            const expert = await expertschema.findOne({ username })
+            if (expert) {
+                const unreadNotifications = expert.notifications.filter(notification => !notification.read);
+                unreadNotifications.forEach(notification => {
+                    notification.read = true
+                    expert.save
+                });
+            }
+            res.status(200).send({ message: `Expert notification updated` })
+        }
+        else {
+            const user = await userschema.findOne({ username })
+            if (user) {
+                const unreadNotifications = user.notifications.filter(notification => !notification.read);
+                unreadNotifications.forEach(notification => {
+                    notification.read = true
+                    user.save
+                });
+            }
+            res.status(200).send({ message: `Learner's notification updated` })
+        }
+
+    } catch (e) {
+        console.log("[E] Error on bellclicked: ", e)
+        res.status(500).send("[E] Error on bellclicked");
+    }
+})
+
+
+
+
+
+
+
+// @desc Notification by expert to finalize price -----------------------------final time Expert Dicision ----------------------------
+// @route post : http://localhost:8080/user/notification/finalTimenPrice
+// @access public
+const finalTimenPrice = asyncHandler(async (req, res) => {  // public route  done by the expert to finalize price
+    try {
+        const { finalTime, finalPrice, finalDuration, doubtId } = req.body; // username -> The one had a doubt
         // changed my mind and doing via body, we can inserting using post in js easily ...
-        if (!finalTime || !finalPrice || !username || !expertname) {
+        if (!finalTime || !finalPrice) {
             return res.status(400).json({ error: 'Final time, final price, username, and expert name must be provided' });
         }
+
+        const decodedInfo = req.user.decoded;
+        const expertname = decodedInfo.user.username;
+
+        const doubt = await doubtSchema.findOne({ _id: doubtId })
+        if (!doubt) { 
+            res.send({error:"Doubt Id not found"}); 
+            return 
+        }
+        const username = doubt.username
 
         const userWithDoubt = await userschema.findOne({ username: username });
         console.log(userWithDoubt)
@@ -168,7 +244,6 @@ const finalTimenPrice = asyncHandler(async (req, res) => {  // public route
         userWithDoubt.notifications.push({ message: `Expert ${expertname} has agreed to take meeting doubtId:${doubtId} at ${finalTime} for ${finalDuration} with RS${finalPrice}.` })
         await userWithDoubt.save()
 
-        const doubt = await doubtSchema.findOne({ _id: doubtId })
         if (!doubt) {
             return res.status(404).json({ error: 'Doubt not found' });
         }
@@ -184,7 +259,7 @@ const finalTimenPrice = asyncHandler(async (req, res) => {  // public route
 
 
 // @desc User selects the expert from the contained list -------------------------------- Expert selection by User ----------------------------
-// @route post : expert/notification/selected
+// @route post : http://localhost:8080/expert/notification/selected
 // @access private
 const selectExpert = asyncHandler(async (req, res) => {  // public route
     try {
@@ -254,4 +329,4 @@ const selectExpert = asyncHandler(async (req, res) => {  // public route
 })
 
 
-module.exports = { userdoubt, notifications, notification, finalTimenPrice, selectExpert };
+module.exports = { userdoubt, notifications, doubtRequest, bellclick, finalTimenPrice, selectExpert };

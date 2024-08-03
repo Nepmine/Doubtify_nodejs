@@ -30,7 +30,7 @@ const home = asyncHandler(async (req, res) => {
     }
     else {
         console.log("0 Notifications");
-        res.send(`Hello ${user.token}, How are you? Welcome to our home page. Notification count =0 and notifications:Null `);
+        res.send({notificationCount, unreadNotifications});
     }
 
 })
@@ -93,8 +93,7 @@ const expsignup = asyncHandler(async (req, res) => {
                 person = await userschema.findOne({ username: username })
                 console.log(person.role)
                 res.status(201).json({
-                    'message': "Field submitted in database successfully: ",
-                    "data": req.body,
+                    'message': "Field submitted in database successfully",
                     "Notification": Notification
                 })
             }
@@ -128,7 +127,7 @@ const signup = asyncHandler(async (req, res) => {
             password,
             role: "user"
         })
-        res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": req.body })
+        res.status(201).json({ 'message': "Field submitted in database successfully: ", "data": req.body.username })
     }
 
 })
@@ -139,7 +138,7 @@ const signup = asyncHandler(async (req, res) => {
 // @desc login page             --------------------------------login----------------------------
 // @route /login
 // @access public
-
+ 
 const login = asyncHandler(async (req, res) => {
     console.log("logged in ::")
     console.log(req.body);
@@ -192,11 +191,11 @@ const login = asyncHandler(async (req, res) => {
                 req.session.cookie.maxAge = 604800000;
                 console.log("HEllo ", req.session.username, ", your Session is created")
 
-                res.status(200).json({ "message": "He is logged in", "token": accesstoken, "role": person.lastState });
+                res.status(200).json({ "message": "You are logged in", "token": accesstoken, "role": person.lastState });
                 console.log("[T] User Logged in succesfully")
             }
             else
-                res.status(400).json({ message: "Invalid email or password" })
+                res.status(400).json({ message: "Invalid email or password", token:accesstoken })
         }
     }
 

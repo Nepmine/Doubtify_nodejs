@@ -113,7 +113,7 @@ const putExpertInfo = asyncHandler(async (req, res) => {
 
 
 
-/* @desc get all the doubts user had done till now -------------------------------- change Doubt Discription ----------------------------*/
+/* @desc get all the doubts user had done till now --------------------------------Doubt History and change specific doubt ----------------------------*/
 // request: get
 // @route /request/doubtHistory
 // @access private

@@ -49,7 +49,7 @@ const videoBasics = asyncHandler(async (req, res) => {
 
 
 //@disc: check if there is meeting or not [returns there is meeting or not]
-// //Path: /call/checkMeeting
+// //Path: /call/checkMeeting 
 const checkMeeting = asyncHandler(async (req, res) => {
 
     const decodedInfo = req.user.decoded;
@@ -88,7 +88,7 @@ const checkMeeting = asyncHandler(async (req, res) => {
             }
             time.push(timeLearner)
         }
-        res.status(200).json({ message: "The time for the meeting of the perticular user is provided with there role", time: time })
+        res.status(200).json({ message: "The time for the meeting of the perticular user is provided with there role", time})
     }
 })
 // for the join button [joined and other waiting others]
@@ -100,11 +100,11 @@ const checkMeeting = asyncHandler(async (req, res) => {
 // //Path: /call/join
 const joinButton = asyncHandler(async (req, res) => {
 
-    let { expertCheck/*Boolean*/ } = req.body;
+    const decodedInfo = req.user.decoded;
+    const username = decodedInfo.user.username;
+    const expertCheck= decodedInfo.user.ifExpert
     expertCheck = expertCheck === '1'; // if the person clicked the button is user or expert
     console.log(expertCheck)
-    if (!req.session) console.log("Session Error !!!")
-    const username = req.session.username;
     console.log(username)
     const expert = await expertschema.findOne({ username })
     const learner = await userschema.findOne({ username })
