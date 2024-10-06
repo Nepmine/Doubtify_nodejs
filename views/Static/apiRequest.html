@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Request Tool</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">API Request Tool</h1>
+        
+        <!-- Request Form -->
+        <form id="api-form">
+            <div class="form-group">
+                <label for="method">HTTP Method:</label>
+                <select id="method" class="form-control" required>
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="url">API URL:</label>
+                <input type="url" id="url" class="form-control" placeholder="https://example.com/api" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="token">Bearer Token:</label>
+                <input type="text" id="token" class="form-control" placeholder="Enter your Bearer token here">
+            </div>
+            
+            <div class="form-group">
+                <label for="body">Request Body (URL Encoded):</label>
+                <textarea id="body" class="form-control" rows="5" placeholder="key1=value1&key2=value2"></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Send Request</button>
+        </form>
+
+        <!-- Response Display -->
+        <h3 class="mt-4">Response:</h3>
+        <pre id="response" class="bg-light p-3"></pre>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="apiRequest.js"></script>
+</body>
+</html>

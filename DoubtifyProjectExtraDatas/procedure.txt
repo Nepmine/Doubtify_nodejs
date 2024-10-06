@@ -1,0 +1,20 @@
+both log in {Learner and expert}
+expert gets notifications of existing doubts while signing up
+expert asks doubt description (http://localhost:8080/user/doubtRequest)
+expert apply for doubt (http://localhost:8080/user/notification/expertApplying)
+User gets the notifications ()
+Selects the expert (http://localhost:8080/user//notification/selectExpert)
+----------- Meeting Conformed ------------
+
+
+
+
+
+
+
+Nepmine : [Learner]eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiTmVwbWluZSIsImVtYWlsIjoic3VyYWpnaGltaXJlMTM1NzlAZ21haWwuY29tIiwiaWZFeHBlcnQiOmZhbHNlfSwiaWF0IjoxNzI4MTkxODczLCJleHAiOjE3Mjg3OTY2NzN9.PQsuTvI5th--zM-kxtTG8b9aQ2ISZgLOm6uWb7FHQ6w
+
+67021e0405682bc1f8d688cd  {doubt ID}
+
+bot:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiYm90IiwiZW1haWwiOiJib3RAZ21haWwuY29tIiwiaWZFeHBlcnQiOmZhbHNlfSwiaWF0IjoxNzI4MTkyMTM0LCJleHAiOjE3Mjg3OTY5MzR9.z_5bIZU5oN0_uIhjTj6yv296ZQQtEVt0Iq0AaRWUM54

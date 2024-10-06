@@ -1,1 +1,1 @@
-const session = require('express-session');
+app.use("/", require('./router/userRoutes'))

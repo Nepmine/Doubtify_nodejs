@@ -6,7 +6,7 @@ const validateToken = require('../middleware/tokenValidation')
 
 const {doubtSchema }= require('../models/formModules')
 
-const { userdoubt, notifications,doubtRequest, bellclick, finalTimenPrice,selectExpert} = require('../Controller/formController');
+const { userdoubt, notifications,doubtRequest, bellclick, expertApplying,selectExpert} = require('../Controller/formController');
 
 
 
@@ -34,7 +34,7 @@ formrouter.route("/doubtRequest").get(validateToken, doubtRequest); // to get th
 
 formrouter.route("/bellclicked").get(validateToken, bellclick);
 
-formrouter.route("/notification/finalTimenPrice").post(validateToken, finalTimenPrice); // just added
+formrouter.route("/notification/expertApplying").post(validateToken, expertApplying); // just added
 
 formrouter.route("/notification/selectExpert").post(validateToken, selectExpert); // just added    
 

@@ -30,7 +30,7 @@ const home = asyncHandler(async (req, res) => {
     }
     else {
         console.log("0 Notifications");
-        res.send({notificationCount, unreadNotifications});
+        res.send({ notificationCount, unreadNotifications });
     }
 
 })
@@ -50,55 +50,65 @@ const expsignup = asyncHandler(async (req, res) => {
     const proof = req.files['proof'] ? req.files['proof'].map(file => file.filename) : [];
     const library = req.files['library'] ? req.files['library'].map(file => file.filename) : [];
 
+    const decodedInfo = req.user.decoded;
+    username = decodedInfo.user.username;
 
-
-    if (!title || !description || !expertese || !proof) {
-        res.status(400);
-        throw new Error("Please fill the every essentials in the form");
+    const existingExpert = await expertschema.findOne({ username: username }); 
+    if (existingExpert) {
+        console.log(`Expert(${username}) already exists !!`);
+        res.status(201).json({
+            'message': "Expert with that username exists",
+        })
     }
     else {
-        const decodedInfo = req.user.decoded;
-        username = decodedInfo.user.username;
-        try {
-            const store = await expertschema.create({
-                username,
-                title,
-                description,
-                jobtitle,
-                expertese: Array.isArray(expertese) ? expertese : [expertese],
-                resume,
-                proof,
-                library,
-                links: Array.isArray(links) ? links : [links]
-            })
-            if (store) {
-                console.log("[T] Expert data submitted ::")
-                // console.log("Decoded info::", decodedInfo)
-                person = await userschema.findOne({ username: username })
-                if (!person.role.includes('expert')) {
-                    person.role.push('expert')
-                    await person.save();
-                }
+        if (!title || !description || !expertese || !proof) {
+            res.status(400);
+            throw new Error("Please fill the every essentials in the form");
+        }
+        else {
 
-                // for displaying first notifications to the expert :::
-                const newNotifications = await doubtSchema.find({
-                    field: { $in: expertese }
-                });
-                let Notification = []
-                for (let i of newNotifications) {
-                    Notification.push(`From ${i.username} with doubt id: ${i._id} has a doubt for you :: ${i.doubt} with duration ${i.time.duration}`)
-                } // 
-                console.log("Work for him ::", Notification)
-
-                person = await userschema.findOne({ username: username })
-                console.log(person.role)
-                res.status(201).json({
-                    'message': "Field submitted in database successfully",
-                    "Notification": Notification
+            try {
+                const store = await expertschema.create({
+                    username,
+                    title,
+                    description,
+                    jobtitle,
+                    expertese: Array.isArray(expertese) ? expertese : [expertese],
+                    resume,
+                    proof,
+                    library,
+                    links: Array.isArray(links) ? links : [links]
                 })
-            }
-            else console.log("[E] Role couldnot be modified to expert")
-        } catch (error) { res.status(500).json({ message: error.message }); }
+                if (store) {
+                    console.log("[T] Expert data submitted ::")
+                    // console.log("Decoded info::", decodedInfo)
+                    person = await userschema.findOne({ username: username })
+                    if (!person.role.includes('expert')) {
+                        person.role.push('expert')
+                        await person.save();
+                    }
+                    person.lastState = "expert";
+
+                    // for displaying first notifications to the expert :::
+                    const newNotifications = await doubtSchema.find({
+                        field: { $in: expertese }
+                    });
+                    let Notification = []
+                    for (let i of newNotifications) {
+                        Notification.push(`From ${i.username} with doubt id: ${i._id} has a doubt for you :: ${i.doubt} with duration ${i.time.duration}`)
+                    } // 
+                    console.log("Work for him ::", Notification)
+
+                    person = await userschema.findOne({ username: username })
+                    console.log(person.role)
+                    res.status(201).json({
+                        'message': "Field submitted in database successfully",
+                        "Notification": Notification
+                    })
+                }
+                else console.log("[E] Role couldnot be modified to expert")
+            } catch (error) { res.status(500).json({ message: error.message }); }
+        }
     }
 })
 
@@ -138,7 +148,7 @@ const signup = asyncHandler(async (req, res) => {
 // @desc login page             --------------------------------login----------------------------
 // @route /login
 // @access public
- 
+
 const login = asyncHandler(async (req, res) => {
     console.log("logged in ::")
     console.log(req.body);
@@ -195,7 +205,7 @@ const login = asyncHandler(async (req, res) => {
                 console.log("[T] User Logged in succesfully")
             }
             else
-                res.status(400).json({ message: "Invalid email or password", token:accesstoken })
+                res.status(400).json({ message: "Invalid email or password", token: accesstoken })
         }
     }
 

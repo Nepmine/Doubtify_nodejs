@@ -10,7 +10,7 @@ const roomID =
     
 
     const { doubtSchema } = await require('../../models/formModules') // await wrong xa ....
-    const person = await doubtSchema.findOne(doubtID)    // Yo chai maile last request pathako aadhar ma k-ta haru le rakhxan
+    const person = await doubtSchema.findOne(doubtID || '66a9446d2da69258ee40b2a3')    // Yo chai maile last request pathako aadhar ma k-ta haru le rakhxan
     const roomId = person.roomID
 
 
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiNjY4OGQ2NWEwNGQxNzBiYTUwNjAwNWEwIiwidXNlcm5hbWUiOiJ1c2VyeXUiLCJlbWFpbCI6InVzZXJ5dUBnbWFpbC5jb20ifSwiaWF0IjoxNzIwOTY0NzgyLCJleHAiOjE3MjEwNTExODJ9.4ZHjRum9KGg4pzE1zDC97hwOQ2kGIDtm9I7w3X3M7hA'
+                    'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiYm90MSIsImVtYWlsIjoiYm90QGdtYWlsLmNvbSIsImlmRXhwZXJ0IjpmYWxzZX0sImlhdCI6MTcyNDI2MzkyNiwiZXhwIjoxNzI0ODY4NzI2fQ.MFB_EsO5wG5oGZhb0346I99wCqkb-xs3FeuAA7tTF3o'
                 },
                 body: JSON.stringify({ 
                     roomUrl: url,
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
                  }),
             });
             const data = await response.json();
-            console.log("Function is called3")
+            console.log("Function is called")
             console.log('Response from server /call/initiate :', data);
 
 

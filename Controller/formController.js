@@ -5,7 +5,7 @@ const session = require('express-session');
 
 
 
-// @desc doubt submition for expert       -------------------------------- Doubt submition ------------------------------
+// @desc doubt submition from user       -------------------------------- Doubt submition ------------------------------
 // @route http://localhost:8080/user/doubt
 // @access private
 const userdoubt = asyncHandler(async (req, res) => {
@@ -215,12 +215,10 @@ const bellclick = asyncHandler(async (req, res) => {
 
 
 
-
-
-// @desc Notification by expert to finalize price -----------------------------final time Expert Dicision ----------------------------
-// @route post : http://localhost:8080/user/notification/finalTimenPrice
+// @desc Expert shows intrest in doubt ----------------------------- Expert applying for doubt ----------------------------
+// @route post : http://localhost:8080/user/notification/expertApplying
 // @access public
-const finalTimenPrice = asyncHandler(async (req, res) => {  // public route  done by the expert to finalize price
+const expertApplying = asyncHandler(async (req, res) => {  // public route  done by the expert to finalize price
     try {
         const { finalTime, finalPrice, finalDuration, doubtId } = req.body; // username -> The one had a doubt
         // changed my mind and doing via body, we can inserting using post in js easily ...
@@ -236,9 +234,9 @@ const finalTimenPrice = asyncHandler(async (req, res) => {  // public route  don
             res.send({error:"Doubt Id not found"}); 
             return 
         }
-        const username = doubt.username
+        const learnername = doubt.username
 
-        const userWithDoubt = await userschema.findOne({ username: username });
+        const userWithDoubt = await userschema.findOne({ username: learnername });
         console.log(userWithDoubt)
 
         userWithDoubt.notifications.push({ message: `Expert ${expertname} has agreed to take meeting doubtId:${doubtId} at ${finalTime} for ${finalDuration} with RS${finalPrice}.` })
@@ -264,11 +262,9 @@ const finalTimenPrice = asyncHandler(async (req, res) => {  // public route  don
 const selectExpert = asyncHandler(async (req, res) => {  // public route
     try {
         const { expertname, finalPrice, finalTime, finalDuration, doubtId } = req.body;
-        // changed my mind and doing via body, we can insert using post in js easily ...
         if (!expertname || !finalPrice || !finalTime || !finalDuration || !doubtId) {
             console.log("[E] Data insufficient ... [Expert selection by User]")
             return res.status(404).json({ error: ' Data insufficient' });
-
         }
 
         const expertPurposing = await expertschema.findOne({ username: expertname });
@@ -293,7 +289,7 @@ const selectExpert = asyncHandler(async (req, res) => {  // public route
 
         expertPurposing.notifications.push({ message: `[Conformed] Your meeting for DoubtID: ${doubtId} is conformed at ${finalTime} with Rs${finalPrice} with ${username} for ${finalDuration} hour.Your room ID: ${roomID} Dont be late !!` })
         await expertPurposing.save()
-
+        
         const user = await userschema.findOne({ username })
         user.meetings.push({ role: 'Learner', doubtId })
         // const user=await userschema.findOne({username})
@@ -329,4 +325,4 @@ const selectExpert = asyncHandler(async (req, res) => {  // public route
 })
 
 
-module.exports = { userdoubt, notifications, doubtRequest, bellclick, finalTimenPrice, selectExpert };
+module.exports = { userdoubt, notifications, doubtRequest, bellclick, expertApplying, selectExpert };
