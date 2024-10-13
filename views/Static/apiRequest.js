@@ -13,7 +13,7 @@ document.getElementById('api-form').addEventListener('submit', async function(ev
         headers['Authorization'] = `Bearer ${token}`;
     }
     headers['Content-Type'] = 'application/x-www-form-urlencoded';
-
+ 
     try {
         // Send request
         const response = await axios({

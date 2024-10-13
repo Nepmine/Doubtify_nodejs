@@ -256,7 +256,7 @@ const expertApplying = asyncHandler(async (req, res) => {  // public route  done
 
 
 
-// @desc User selects the expert from the contained list -------------------------------- Expert selection by User ----------------------------
+// @desc User selects the expert from the contained list [Final Selection] -------------------------------- Expert selection by User ----------------------------
 // @route post : http://localhost:8080/expert/notification/selected
 // @access private
 const selectExpert = asyncHandler(async (req, res) => {  // public route
@@ -318,6 +318,10 @@ const selectExpert = asyncHandler(async (req, res) => {  // public route
             expertName: expertname,
             roomID
         });
+
+        doubt.roomID = roomID;
+        await doubt.save();
+
     } catch (e) {
         console.log("[E] Error in finalNotification", e)
         res.status(500).json({ error: "An error occurred on formController." });

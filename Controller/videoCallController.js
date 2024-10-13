@@ -7,13 +7,14 @@ const asyncHandler = require("express-async-handler")
 const { wss, sendMessageToUser } = require('../ws/websocketServer');
 
 
+
 // desc: made for demo purpose to check if someone joined the room
 //Path: /call/initiate
 const videoBasics = asyncHandler(async (req, res) => {
     const { expert /* Boolean */, doubtID } = req.body;
 
     // Room Id is to be determined by database, and the meeting ID is also necessary
-    const decodedInfo = user.decoded;
+    const decodedInfo = req.user.decoded;
     const username = decodedInfo.user.username
 
     if (expert) {  // if it was expert who joined, the message should be send to user
@@ -88,22 +89,22 @@ const checkMeeting = asyncHandler(async (req, res) => {
             }
             time.push(timeLearner)
         }
-        res.status(200).json({ message: "The time for the meeting of the perticular user is provided with there role", time})
+        res.status(200).json({ message: "The time for the meeting of the perticular user is provided with there role", time })
     }
 })
 // for the join button [joined and other waiting others]
 
 
 
-//@disc: It just passes the information if the other has joined or not
+//@disc: if someone joined the call, it is to signal other
 // method:: post
 // //Path: /call/join
 const joinButton = asyncHandler(async (req, res) => {
 
     const decodedInfo = req.user.decoded;
     const username = decodedInfo.user.username;
-    const expertCheck= decodedInfo.user.ifExpert
-    expertCheck = expertCheck === '1'; // if the person clicked the button is user or expert
+    let expertCheck = decodedInfo.user.ifExpert
+    expertCheck = expertCheck === '1'; // if the person who clicked the button is user or expert
     console.log(expertCheck)
     console.log(username)
     const expert = await expertschema.findOne({ username })
@@ -154,8 +155,40 @@ const hasMeeting = asyncHandler(async (req, res) => {
     // usually it doesnot do anything
 })
 
+// ----------------------------------------------- in video calling page --------------------------------------------
 
-// things left to do
+
+//@disc: to give all the meeting requirements [roomID],[kitToken]
+// method:: post
+// Path: /call/meetingMaterial
+const meetingMaterial = asyncHandler(async (req, res) => {
+    try {
+      const decodedInfo = req.user.decoded;
+      const username = decodedInfo.user.username;
+      const { doubtID } = req.body;
+      console.log("The doubt id is:",doubtID)
+  
+      const doubt = await doubtSchema.findOne({ _id:doubtID });
+      console.log(doubt)
+  
+      if (!doubt || !doubt.roomID) {
+        console.log("Error: User doesn't have any meeting sessions!!");
+        return res.status(400).json({ error: "You don't have any meeting sessions!!" });
+      }
+  
+      const roomID = doubt.roomID;
+      
+      
+      // [Modified] Send roomID and kitToken inside an object
+      res.status(200).json({roomID, appID:process.env.appID, serverSecret:process.env.serverSecret, username });
+    } catch (error) {
+      console.error("Error generating meeting material:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
+
+
 
 // ----------------------------------------------- After Meeting --------------------------------------------
 
@@ -168,26 +201,27 @@ const meetingFeedback = asyncHandler(async (req, res) => {  // unchecked, sort o
     const username = decodedInfo.user.username
     const ifExpert = decodedInfo.user.ifExpert
     let person
-    if(ifExpert){ 
-        person = await userschema.findOne({ username}) // if expert, feedback should be given to learner
-    }else{
-        person = await expertschema.findOne({ username})
+    if (ifExpert) {
+        person = await userschema.findOne({ username }) // if expert, feedback should be given to learner
+    } else {
+        person = await expertschema.findOne({ username })
     }
-    const {rating, comment} = req.body
+    const { rating, comment } = req.body
     console.log(person)
-    console.log(rating,comment)
-    if(!(rating && comment))
-        res.err("Please provide rating and comment")
-    console.log(person.meeting)  
-    person.meeting.rating=rating  // yo radi ko meeting nai vaxaina, postman bata garayera check garni ...
-    person.meeting.comment=comment
+    console.log(rating, comment)
+    if (!(rating && comment))
+        return res.status(400).json({ error: "Please provide rating and comment" });
+
+    console.log(person.meeting)
+    person.meeting.rating = rating  // yo radi ko meeting nai vaxaina, postman bata garayera check garni ...
+    person.meeting.comment = comment
     await person.save()
 
-    const meetings= person.meetings
+    const meetings = person.meetings
     let meeting = meetings[meetings.length - 1];
 
-    const doubt= await doubtSchema.findOne({_id:meeting.doubtId})  // I can check the time and give result ... modification rquired
-    doubt.status="Meeting Completed"
+    const doubt = await doubtSchema.findOne({ _id: meeting.doubtId })  // I can check the time and give result ... modification rquired
+    doubt.status = "Meeting Completed"
 
     res.status(200).send("Thanks for your feedback")
 })
@@ -199,4 +233,4 @@ const meetingFeedback = asyncHandler(async (req, res) => {  // unchecked, sort o
 
 
 
-module.exports = { videoBasics, checkMeeting, joinButton, hasMeeting, meetingFeedback }
+module.exports = { videoBasics, checkMeeting, joinButton, hasMeeting, meetingMaterial, meetingFeedback }

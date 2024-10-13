@@ -55,6 +55,10 @@ const doubt = mongoose.Schema({   // define role
     },
     finalTime: {
         type: String,
+    },
+    roomID:{
+        type: String,
+        default: "NA"
     }
 }, {
     timestamps: true,
